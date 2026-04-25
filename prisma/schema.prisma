@@ -1,0 +1,119 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  phone     String?
+  avatar    String?
+  role      String   @default("USER")
+  createdAt DateTime @default(now())
+
+  cars         SavedCar[]
+  quotes       InsuranceQuote[]
+  policies     Policy[]
+  listings     Car[]            @relation("DealerCars")
+}
+
+model Car {
+  id           String   @id @default(cuid())
+  make         String
+  model        String
+  year         Int
+  price        Float
+  mileage      Int
+  color        String
+  vin          String   @unique
+  description  String
+  images       String
+  condition    String   @default("USED")
+  transmission String
+  fuelType     String
+  bodyType     String
+  dealerId     String
+  status       String   @default("AVAILABLE")
+  createdAt    DateTime @default(now())
+
+  dealer       User            @relation("DealerCars", fields: [dealerId], references: [id])
+  savedBy      SavedCar[]
+  quotes       InsuranceQuote[]
+  policies     Policy[]
+}
+
+model InsuranceProvider {
+  id          String  @id @default(cuid())
+  name        String
+  logo        String
+  description String
+  rating      Float
+
+  plans       InsurancePlan[]
+}
+
+model InsurancePlan {
+  id             String  @id @default(cuid())
+  providerId     String
+  name           String
+  type           String
+  monthlyPremium Float
+  deductible     Float
+  coverageLimit  Float
+  features       String
+
+  provider       InsuranceProvider @relation(fields: [providerId], references: [id])
+  quotes         InsuranceQuote[]
+  policies       Policy[]
+}
+
+model InsuranceQuote {
+  id             String   @id @default(cuid())
+  userId         String
+  carId          String
+  planId         String
+  monthlyPremium Float
+  status         String   @default("PENDING")
+  createdAt      DateTime @default(now())
+
+  user           User          @relation(fields: [userId], references: [id])
+  car            Car           @relation(fields: [carId], references: [id])
+  plan           InsurancePlan @relation(fields: [planId], references: [id])
+}
+
+model Policy {
+  id             String   @id @default(cuid())
+  userId         String
+  carId          String
+  planId         String
+  policyNumber   String   @unique
+  startDate      DateTime
+  endDate        DateTime
+  status         String   @default("ACTIVE")
+  monthlyPremium Float
+  createdAt      DateTime @default(now())
+
+  user           User          @relation(fields: [userId], references: [id])
+  car            Car           @relation(fields: [carId], references: [id])
+  plan           InsurancePlan @relation(fields: [planId], references: [id])
+}
+
+model SavedCar {
+  id        String   @id @default(cuid())
+  userId    String
+  carId     String
+  createdAt DateTime @default(now())
+
+  user      User @relation(fields: [userId], references: [id])
+  car       Car  @relation(fields: [carId], references: [id])
+
+  @@unique([userId, carId])
+}
