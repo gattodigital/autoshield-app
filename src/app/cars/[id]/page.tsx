@@ -29,8 +29,9 @@ const conditionColors: Record<string, 'success' | 'orange' | 'secondary'> = {
   USED: 'secondary',
 }
 
-export default async function CarDetailPage({ params }: { params: { id: string } }) {
-  const car = await getCar(params.id)
+export default async function CarDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const car = await getCar(id)
   if (!car) notFound()
 
   const relatedCars = await getRelatedCars(car.make, car.id)

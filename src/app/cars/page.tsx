@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import CarCard from '@/components/features/CarCard'
 import { Input } from '@/components/ui/input'
@@ -65,8 +66,9 @@ async function getCars(params: SearchParams) {
   return { cars, total, pages: Math.ceil(total / pageSize), page }
 }
 
-export default async function CarsPage({ searchParams }: { searchParams: SearchParams }) {
-  const { cars, total, pages, page } = await getCars(searchParams)
+export default async function CarsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const resolvedParams = await searchParams
+  const { cars, total, pages, page } = await getCars(resolvedParams)
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -87,7 +89,7 @@ export default async function CarsPage({ searchParams }: { searchParams: SearchP
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 name="search"
-                defaultValue={searchParams.search}
+                defaultValue={resolvedParams.search}
                 placeholder="Search make, model, or keyword..."
                 className="pl-10"
               />
@@ -95,18 +97,18 @@ export default async function CarsPage({ searchParams }: { searchParams: SearchP
 
             {/* Filter Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              <Select name="make" defaultValue={searchParams.make}>
+              <Select name="make" defaultValue={resolvedParams.make}>
                 {MAKES.map((m) => <option key={m} value={m}>{m}</option>)}
               </Select>
-              <Select name="bodyType" defaultValue={searchParams.bodyType}>
+              <Select name="bodyType" defaultValue={resolvedParams.bodyType}>
                 {BODY_TYPES.map((b) => <option key={b} value={b}>{b}</option>)}
               </Select>
-              <Select name="condition" defaultValue={searchParams.condition}>
+              <Select name="condition" defaultValue={resolvedParams.condition}>
                 {CONDITIONS.map((c) => <option key={c} value={c}>{c}</option>)}
               </Select>
-              <Input name="priceMin" defaultValue={searchParams.priceMin} placeholder="Min Price" type="number" />
-              <Input name="priceMax" defaultValue={searchParams.priceMax} placeholder="Max Price" type="number" />
-              <Input name="yearMin" defaultValue={searchParams.yearMin} placeholder="Min Year" type="number" />
+              <Input name="priceMin" defaultValue={resolvedParams.priceMin} placeholder="Min Price" type="number" />
+              <Input name="priceMax" defaultValue={resolvedParams.priceMax} placeholder="Max Price" type="number" />
+              <Input name="yearMin" defaultValue={resolvedParams.yearMin} placeholder="Min Year" type="number" />
             </div>
 
             <div className="flex gap-3">
@@ -114,9 +116,9 @@ export default async function CarsPage({ searchParams }: { searchParams: SearchP
                 <SlidersHorizontal className="h-4 w-4" />
                 Apply Filters
               </Button>
-              <a href="/cars">
+              <Link href="/cars">
                 <Button type="button" variant="secondary">Clear All</Button>
-              </a>
+              </Link>
             </div>
           </form>
         </div>
@@ -141,8 +143,8 @@ export default async function CarsPage({ searchParams }: { searchParams: SearchP
           <div className="flex justify-center gap-2 mt-10">
             {Array.from({ length: pages }, (_, i) => i + 1).map((p) => {
               const params = new URLSearchParams()
-              if (searchParams.search) params.set('search', searchParams.search)
-              if (searchParams.make) params.set('make', searchParams.make)
+              if (resolvedParams.search) params.set('search', resolvedParams.search)
+              if (resolvedParams.make) params.set('make', resolvedParams.make)
               params.set('page', p.toString())
               return (
                 <a
