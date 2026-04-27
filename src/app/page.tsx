@@ -4,13 +4,19 @@ import { Button } from '@/components/ui/button'
 import { prisma } from '@/lib/db'
 import CarCard from '@/components/features/CarCard'
 
+export const dynamic = 'force-dynamic'
+
 async function getFeaturedCars() {
-  return prisma.car.findMany({
-    take: 6,
-    where: { status: 'AVAILABLE' },
-    include: { dealer: { select: { name: true, email: true, id: true, phone: true } } },
-    orderBy: { createdAt: 'desc' },
-  })
+  try {
+    return await prisma.car.findMany({
+      take: 6,
+      where: { status: 'AVAILABLE' },
+      include: { dealer: { select: { name: true, email: true, id: true, phone: true } } },
+      orderBy: { createdAt: 'desc' },
+    })
+  } catch {
+    return []
+  }
 }
 
 const stats = [
