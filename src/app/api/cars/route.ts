@@ -21,16 +21,20 @@ export async function GET(request: Request) {
   if (bodyType && bodyType !== 'All Types') where.bodyType = bodyType
   if (condition && condition !== 'All Conditions') where.condition = condition
 
-  const [cars, total] = await Promise.all([
-    prisma.car.findMany({
-      where,
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      include: { dealer: { select: { name: true, id: true, email: true, phone: true } } },
-      orderBy: { createdAt: 'desc' },
-    }),
-    prisma.car.count({ where }),
-  ])
+  try {
+    const [cars, total] = await Promise.all([
+      prisma.car.findMany({
+        where,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: { dealer: { select: { name: true, id: true, email: true, phone: true } } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.car.count({ where }),
+    ])
 
-  return NextResponse.json({ cars, total, pages: Math.ceil(total / pageSize) })
+    return NextResponse.json({ cars, total, pages: Math.ceil(total / pageSize) })
+  } catch {
+    return NextResponse.json({ cars: [], total: 0, pages: 0 })
+  }
 }
