@@ -2,8 +2,17 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 
+const isVercelSqliteDemo = process.env.VERCEL === '1' && (process.env.DATABASE_URL ?? '').startsWith('file:')
+
 export async function POST(request: Request) {
   try {
+    if (isVercelSqliteDemo) {
+      return NextResponse.json(
+        { error: 'Registration is disabled in the demo deployment. Use the demo credentials on the sign-in page.' },
+        { status: 503 }
+      )
+    }
+
     const { name, email, phone, password } = await request.json()
 
     if (!name || !email || !password) {
