@@ -21,21 +21,25 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) {
           return null
         }
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          })
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        })
+          if (!user) return null
 
-        if (!user) return null
+          const passwordMatch = await bcrypt.compare(credentials.password, user.password)
+          if (!passwordMatch) return null
 
-        const passwordMatch = await bcrypt.compare(credentials.password, user.password)
-        if (!passwordMatch) return null
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          }
+        } catch {
+          // On demo deployments without writable DB, fail auth cleanly.
+          return null
         }
       },
     }),
