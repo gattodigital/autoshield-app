@@ -24,7 +24,8 @@ const BODY_TYPES = ['All Types', 'Sedan', 'SUV', 'Truck', 'Wagon', 'Coupe', 'Con
 const CONDITIONS = ['All Conditions', 'NEW', 'USED', 'CERTIFIED']
 
 async function getCars(params: SearchParams) {
-  const page = parseInt(params.page ?? '1')
+  const parsedPage = Number.parseInt(params.page ?? '1', 10)
+  const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1
   const pageSize = 12
   const skip = (page - 1) * pageSize
 
@@ -52,18 +53,22 @@ async function getCars(params: SearchParams) {
     if (params.yearMax) (where.year as Record<string, number>).lte = parseInt(params.yearMax)
   }
 
-  const [cars, total] = await Promise.all([
-    prisma.car.findMany({
-      where,
-      skip,
-      take: pageSize,
-      include: { dealer: { select: { name: true, email: true, id: true, phone: true } } },
-      orderBy: { createdAt: 'desc' },
-    }),
-    prisma.car.count({ where }),
-  ])
+  try {
+    const [cars, total] = await Promise.all([
+      prisma.car.findMany({
+        where,
+        skip,
+        take: pageSize,
+        include: { dealer: { select: { name: true, email: true, id: true, phone: true } } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.car.count({ where }),
+    ])
 
-  return { cars, total, pages: Math.ceil(total / pageSize), page }
+    return { cars, total, pages: Math.ceil(total / pageSize), page }
+  } catch {
+    return { cars: [], total: 0, pages: 0, page }
+  }
 }
 
 export default async function CarsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
